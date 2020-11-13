@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="leaflet\leaflet.css" crossorigin=""/>
+    <!-- Make sure you put this AFTER Leaflet's CSS -->
+    <script src="leaflet\leaflet.js" crossorigin=""></script>
+    <!-- Load jQuery and PapaParse to read data from a CSV file -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.0/papaparse.min.js"></script>
+
+ 
+
+    <script src="leaflet.shapefile-gh-pages\leaflet.shpfile.js"></script> 
+    <script src="leaflet.shapefile-gh-pages\shp.js"></script>
+    <title>Global Ecosystem</title>
+  </head>
+
+  <body>
+      <div id="mapid"></div>
+      <style>
+          #mapid 
+          { height: 100%; 
+          width: 100%;
+          position: fixed;
+          }
+      </style>
+      <script type="text/javascript">
+
+          var mymap = L.map('mapid').setView([13.080743, 80.266416], 11);
+          L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
+          attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+          maxZoom: 18,
+          id: 'mapbox/satellite-v9',
+          tileSize: 512,
+          zoomOffset: -1,
+          accessToken: 'pk.eyJ1IjoiYXJ1bjk3IiwiYSI6ImNrMnBzbnp5ejA3NTUzZHA3Z3lrbHVvMGQifQ.a3Rqxf-rzJ_d6l26EnarmA'
+          }).addTo(mymap);
+          
+     
+          function style(feature) {
+              return {
+                  fillColor: '#ffffff',
+                  weight: 3,
+                  opacity: 1,
+                  color: 'white',
+                  dashArray: '2',
+                  fillOpacity: 0
+              };
+          }
+          // var shpfile = new L.Shapefile('terr-ecoregions-TNC.zip',{style: style}); 
+          categories = {};
+         
+
+
+         
+          shp('grid_wise_overlapping_layers.zip').then(function(data){
+                
+                var dat = data["features"]
+                  
+                for (i in dat){
+                  
+                  if(categories[dat[i].properties.WWF_MHTNAM] == null){
+                    categories[dat[i].properties.WWF_MHTNAM] = [dat[i]]
+                  }
+                  else{
+                    categories[dat[i].properties.WWF_MHTNAM].push(dat[i])
+                  }
+                  
+                
+                }
+
+
+                
+               
+          // shpfile.addTo(mymap);
+          
+          
+          function highlightFeature(e) {
+              var layer = e.target;
+
+              layer.setStyle({
+                  weight: 5,
+                  color: '#666',
+                  dashArray: '',
+                  fillOpacity: 0.7
+              });
+
+              if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+                  layer.bringToFront();
+              }
+
+              info.update(layer.feature.properties);
+        }
+
+   
+
+      function zoomToFeatureAll(e) {
+        mymap.fitBounds(e.target.getBounds());
+      }
+
+      function onEachFeatureAll(feature, layer) {
+          layer.on({
+              mouseover: highlightFeature,
+              mouseout: resetHighlightAll,
+              click: zoomToFeatureAll
+          });
+      }
+  
+      function resetHighlightAll(e) {
+        shpfile.resetStyle(e.target);
+          info.update();
+      }
+      var shpfile = new L.Shapefile('grid_wise_overlapping_layers.zip',{style: style,onEachFeature: onEachFeatureAll});
+      geojson =shpfile.addTo(mymap);
+      gjson = {};
+      var baseLayers = {};
+ 
+      
+      var info = L.control();
+
+        info.onAdd = function (mymap) {
+            this._div = L.DomUtil.create('div', 'info'); // create a div with a class "info"
+            this.update();
+            return this._div;
+        };
+
+
+
+        // method that we will use to update the control based on feature properties passed
+        info.update = function (props) {
+          console.log(props)
+            this._div.innerHTML = '<h3>Grid Wise Vegetation Coverage</h3>' +  (props ?
+                'Grid Name : Grid ' + props.id + '<br />Vegetation Area : ' + props.area_sq_m + ' sq. m'
+                : 'Hover over an area');
+        };
+
+        info.addTo(mymap);
+ 
+          });
+      </script>
+
+      <style>
+         .info {
+              padding: 6px 8px;
+              font: 14px/16px Arial, Helvetica, sans-serif;
+              background: white;
+              background: rgba(255,255,255,0.8);
+              box-shadow: 0 0 15px rgba(0,0,0,0.2);
+              border-radius: 5px;
+          }
+          .info h4 {
+              margin: 0 0 5px;
+              color: #777;
+          }
+   
+      </style>
+      </div>
+  </body>
+</html>
